@@ -30,7 +30,7 @@
   (interactive)
   (if (or (file-remote-p default-directory)
 	  (executable-find edamot-R-command))
-      (let ((nrepl-create-client-buffer-function  #'edamot-client-buffer-create)
+      (let ((nrepl-create-client-buffer-function  #'edamot-create-client-buffer)
 	    (cmd (format "%s %s" edamot-R-command edamot-R-params)))
         (when (nrepl-check-for-repl-buffer nil default-directory)
           (nrepl-start-server-process nil cmd)))
@@ -41,7 +41,8 @@
 (defun edamot-connect (host port)
   (interactive (edamot--select-endpoint))
   (when (nrepl-check-for-repl-buffer `(,host ,port) nil)
-    (nrepl-start-client-process host port)))
+    (let ((nrepl-create-client-buffer-function #'edamot-create-client-buffer))
+     (nrepl-start-client-process host port))))
 
 (defun edamot--select-endpoint ()
   (let* ((host (completing-read "Host: " (list "localhost")
@@ -50,7 +51,7 @@
 				nil nil nil nil nil "4005")))
     (list host port)))
 
-(defun edamot-client-buffer-create (endpoint)
+(defun edamot-create-client-buffer (endpoint)
   "Create a REPL buffer and install `cider-repl-mode'.
 ENDPOINT is a plist as returned by `nrepl-connect'."
   (let* ((nrepl-connection-buffer-name-template "*edamot%s*")
@@ -62,6 +63,7 @@ ENDPOINT is a plist as returned by `nrepl-connect'."
         (edamot-mode))
       (add-hook 'nrepl-connected-hook 'edamot--connected-handler nil 'local)
       (add-hook 'nrepl-disconnected-hook 'edamot--disconnected-handler nil 'local))
+    (switch-to-buffer buf)
     buf))
 
 (defun edamot--connected-handler ()
@@ -74,4 +76,5 @@ process buffer."
   "Cleanup after nREPL connection has been lost or closed.
 This function is appended to `nrepl-disconnected-hook' in the
 client process buffer."
+  (nrepl--close-connection-buffer (current-buffer))
   (run-hooks 'edamot-disconnected-hook))
