@@ -1,6 +1,10 @@
 
 (require 'nrepl-client)
 
+(defgroup edamot nil
+  "Emacs DAta MOdeling Toolkit."
+  :prefix "edamot-")
+
 (defcustom edamot-R-command "R"
   "Path to R's executable.")
 
@@ -22,7 +26,12 @@
 
 ;;;###autoload
 (define-derived-mode edamot-mode special-mode "Edamot"
-  "Interactive data modeling with R.")
+  "Interactive data modeling with R."
+  (setq edamot--cursor-overlay (make-overlay 1 1))
+  (setq-local cursor-in-non-selected-windows nil)
+  (setq-local cursor-type nil)
+  ;; (add-hook 'post-command-hook 'edamot--post-command-handler nil t)
+  (overlay-put edamot--cursor-overlay 'face 'edamot-cursor-face))
 
 ;;;###autoload
 (defun edamot-jack-in ()
